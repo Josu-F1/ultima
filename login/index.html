@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+
+<h1>Login</h1>
+
+<input type="text" id="usuario" placeholder="Usuario">
+<input type="password" id="contrasena" placeholder="Contraseña">
+<button onclick="login()">Ingresar</button>
+
+<script>
+    function login() {
+        let formulario = new FormData();
+        formulario.append("usuario", document.getElementById("usuario").value);
+        formulario.append("contrasena", document.getElementById("contrasena").value);
+        
+        fetch("verificar.php", {method: "POST", body: formulario})
+            .then(respuesta => respuesta.text())
+            .then(datos => {
+                if(datos === "ok") {
+                    window.location.href = "productos.html";
+                } else {
+                    alert(datos);
+                }
+            });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Productos y Categorías</title>
+</head>
+<body>
+
+<h1>CRUD de Productos y Categorías</h1>
+<button onclick="salir()">Salir</button>
+
+<h2>Categorías</h2>
+<div>
+    <input type="text" id="buscarCat" placeholder="Buscar categoría">
+    <button onclick="buscarCategorias()">Buscar</button>
+    <button onclick="cargarCategorias()">Ver todos</button>
+</div>
+<hr>
+<div>
+    <input type="hidden" id="idCategoria">
+    <input type="text" id="nombreCategoria" placeholder="Nombre">
+    <button onclick="insertarCategoria()">Agregar Categoría</button>
+    <button onclick="limpiarCategoria()">Limpiar</button>
+</div>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Acciones</th>
+    </tr>
+    <tbody id="categorias"></tbody>
+</table>
+
+<h2>Productos</h2>
+<div>
+    <input type="text" id="buscarProd" placeholder="Buscar producto">
+    <button onclick="buscarProductos()">Buscar</button>
+    <button onclick="cargarProductos()">Ver todos</button>
+</div>
+<hr>
+<div>
+    <input type="hidden" id="idProducto">
+    <input type="text" id="nombreProducto" placeholder="Nombre">
+    <input type="number" id="cantidad" placeholder="Cantidad">
+    <input type="number" id="precio" placeholder="Precio" step="0.01">
+</div>
+
+<h3>Categoría</h3>
+<select id="selectCategoria">
+    <option value="">Seleccionar categoría</option>
+</select>
+
+<button onclick="insertarProducto()">Agregar Producto</button>
+<button onclick="limpiarProducto()">Limpiar</button>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Cantidad</th>
+        <th>Precio</th>
+        <th>Categorías</th>
+        <th>Acciones</th>
+    </tr>
+    <tbody id="productos"></tbody>
+</table>
+
+<script>
+    fetch("verificarSesion.php")
+        .then(r => r.text())
+        .then(d => {
+            if(d == "0") {
+                window.location.href = "index.html";
+            }
+        });
+    
+    cargarCategorias();
+    cargarProductos();
+
+    function cargarCategorias() {
+        fetch("obtenerCategorias.php")
+            .then(r => r.json())
+            .then(d => {
+                let html = "";
+                d.forEach(elemento => {
+                    html += `<tr>
+                        <td>${elemento.id}</td>
+                        <td>${elemento.nombre}</td>
+                        <td>
+                            <button onclick="editarCategoria(${elemento.id}, '${elemento.nombre}')">Editar</button>
+                            <button onclick="eliminarCategoria(${elemento.id})">Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById("categorias").innerHTML = html;
+                
+                let opciones = '<option value="">Seleccionar categoría</option>';
+                d.forEach(elemento => {
+                    opciones += `<option value="${elemento.id}">${elemento.nombre}</option>`;
+                });
+                document.getElementById("selectCategoria").innerHTML = opciones;
+            });
+    }
+
+    function cargarProductos() {
+        fetch("obtenerProductos.php")
+            .then(r => r.json())
+            .then(d => {
+                let html = "";
+                d.forEach(elemento => {
+                    html += `<tr>
+                        <td>${elemento.id}</td>
+                        <td>${elemento.nombre}</td>
+                        <td>${elemento.cantidad}</td>
+                        <td>${elemento.precio}</td>
+                        <td>${elemento.categoria || "Sin categoría"}</td>
+                        <td>
+                            <button onclick="editarProducto(${elemento.id}, '${elemento.nombre}', '${elemento.cantidad}', '${elemento.precio}', '${elemento.categoria_id}')">Editar</button>
+                            <button onclick="eliminarProducto(${elemento.id})">Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById("productos").innerHTML = html;
+            });
+    }
+
+    function insertarCategoria() {
+        let id = document.getElementById("idCategoria").value;
+        let nombre = document.getElementById("nombreCategoria").value;
+        if(!nombre) return alert("Ingrese nombre");
+        
+        let formulario = new FormData();
+        formulario.append("nombre", nombre);
+        if(id) formulario.append("id", id);
+        
+        let archivo = id ? "actualizarCategoria.php" : "insertarCategoria.php";
+        
+        fetch(archivo, {method: "POST", body: formulario})
+            .then(r => r.text())
+            .then(d => {
+                alert(d);
+                limpiarCategoria();
+                cargarCategorias();
+            });
+    }
+
+    function editarCategoria(id, nombre) {
+        document.getElementById("idCategoria").value = id;
+        document.getElementById("nombreCategoria").value = nombre;
+    }
+
+    function limpiarCategoria() {
+        document.getElementById("idCategoria").value = "";
+        document.getElementById("nombreCategoria").value = "";
+    }
+
+    function insertarProducto() {
+        let id = document.getElementById("idProducto").value;
+        let nombre = document.getElementById("nombreProducto").value;
+        let cantidad = document.getElementById("cantidad").value;
+        let precio = document.getElementById("precio").value;
+        let categoriaId = document.getElementById("selectCategoria").value;
+        
+        if(!nombre || !cantidad || !precio || !categoriaId) return alert("Llene todos los campos");
+        
+        let formulario = new FormData();
+        formulario.append("nombre", nombre);
+        formulario.append("cantidad", cantidad);
+        formulario.append("precio", precio);
+        formulario.append("categoria", categoriaId);
+        if(id) formulario.append("id", id);
+        
+        let archivo = id ? "actualizarProducto.php" : "insertarProducto.php";
+        
+        fetch(archivo, {method: "POST", body: formulario})
+            .then(r => r.text())
+            .then(d => {
+                alert(d);
+                limpiarProducto();
+                cargarProductos();
+            });
+    }
+
+    function editarProducto(id, nombre, cantidad, precio, categoriaId) {
+        document.getElementById("idProducto").value = id;
+        document.getElementById("nombreProducto").value = nombre;
+        document.getElementById("cantidad").value = cantidad;
+        document.getElementById("precio").value = precio;
+        document.getElementById("selectCategoria").value = categoriaId;
+    }
+
+    function limpiarProducto() {
+        document.getElementById("idProducto").value = "";
+        document.getElementById("nombreProducto").value = "";
+        document.getElementById("cantidad").value = "";
+        document.getElementById("precio").value = "";
+        document.getElementById("selectCategoria").value = "";
+    }
+
+    function eliminarCategoria(id) {
+        if(confirm("¿Eliminar?")) {
+            let formulario = new FormData();
+            formulario.append("id", id);
+            
+            fetch("eliminarCategoria.php", {method: "POST", body: formulario})
+                .then(r => r.text())
+                .then(d => {
+                    alert(d);
+                    cargarCategorias();
+                    cargarProductos();
+                });
+        }
+    }
+
+    function eliminarProducto(id) {
+        if(confirm("¿Eliminar?")) {
+            let formulario = new FormData();
+            formulario.append("id", id);
+            
+            fetch("eliminarProducto.php", {method: "POST", body: formulario})
+                .then(r => r.text())
+                .then(d => {
+                    alert(d);
+                    cargarProductos();
+                });
+        }
+    }
+
+    function salir() {
+        fetch("salir.php").then(() => {
+            window.location.href = "index.html";
+        });
+    }
+
+    function buscarProductos() {
+        let buscar = document.getElementById("buscarProd").value;
+        
+        if(!buscar) {
+            return alert("Ingrese un término de búsqueda");
+        }
+        
+        let formulario = new FormData();
+        formulario.append("buscar", buscar);
+        
+        fetch("buscarProductos.php", {method: "POST", body: formulario})
+            .then(r => r.json())
+            .then(d => {
+                let html = "";
+                d.forEach(elemento => {
+                    html += `<tr>
+                        <td>${elemento.id}</td>
+                        <td>${elemento.nombre}</td>
+                        <td>${elemento.cantidad}</td>
+                        <td>${elemento.precio}</td>
+                        <td>${elemento.categoria || "Sin categoría"}</td>
+                        <td>
+                            <button onclick="editarProducto(${elemento.id}, '${elemento.nombre}', '${elemento.cantidad}', '${elemento.precio}', '${elemento.categoria_id}')">Editar</button>
+                            <button onclick="eliminarProducto(${elemento.id})">Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById("productos").innerHTML = html;
+            });
+    }
+
+    function buscarCategorias() {
+        let buscar = document.getElementById("buscarCat").value;
+        
+        if(!buscar) {
+            return alert("Ingrese un término de búsqueda");
+        }
+        
+        let formulario = new FormData();
+        formulario.append("buscar", buscar);
+        
+        fetch("buscarCategorias.php", {method: "POST", body: formulario})
+            .then(r => r.json())
+            .then(d => {
+                let html = "";
+                d.forEach(elemento => {
+                    html += `<tr>
+                        <td>${elemento.id}</td>
+                        <td>${elemento.nombre}</td>
+                        <td>
+                            <button onclick="editarCategoria(${elemento.id}, '${elemento.nombre}')">Editar</button>
+                            <button onclick="eliminarCategoria(${elemento.id})">Eliminar</button>
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById("categorias").innerHTML = html;
+                
+                let opciones = '<option value="">Seleccionar categoría</option>';
+                d.forEach(elemento => {
+                    opciones += `<option value="${elemento.id}">${elemento.nombre}</option>`;
+                });
+                document.getElementById("selectCategoria").innerHTML = opciones;
+            });
+    }
+</script>
+
+</body>
+</html>

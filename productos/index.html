@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Productos</title>
+</head>
+<body>
+
+<h1>CRUD de Productos</h1>
+
+<h2>Buscador</h2>
+<input type="text" id="busqueda" placeholder="Buscar">
+<button onclick="buscar()">Buscar</button>
+
+<h2>Formulario</h2>
+<input type="hidden" id="id">
+<input type="text" id="nombre" placeholder="Nombre">
+<input type="number" id="cantidad" placeholder="Cantidad">
+<input type="number" id="precio" placeholder="Precio" step="0.01">
+
+<button onclick="insertar()">Insertar</button>
+<button onclick="actualizar()">Actualizar</button>
+
+
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Cantidad</th>
+        <th>Precio</th>
+        <th>Acciones</th>
+    </tr>
+    <tbody id="datos"></tbody>
+</table>
+
+<script>
+    let todos = [];
+    cargar();
+
+    function cargar() {
+        fetch("select.php").then(r => r.json()).then(d => {
+            todos = d;
+            mostrar(d);
+        });
+    }
+
+    function mostrar(datos) {
+        let html = "";
+        datos.forEach(elemento => {
+            html += `<tr>
+                <td>${elemento.prodid}</td>
+                <td>${elemento.prodnombre}</td>
+                <td>${elemento.prodcantidad}</td>
+                <td>${elemento.prodprecio}</td>
+                <td>
+                    <button onclick="editar('${elemento.prodid}','${elemento.prodnombre}','${elemento.prodcantidad}','${elemento.prodprecio}')">Editar</button>
+                    <button onclick="eliminar('${elemento.prodid}')">Eliminar</button>
+                </td>
+            </tr>`;
+        });
+        document.getElementById("datos").innerHTML = html;
+    }
+
+    function buscar() {
+        let nombre = document.getElementById("busqueda").value;
+        
+        if(!nombre) {
+            cargar();
+            return;
+        }
+        
+        let formulario = new FormData();
+        formulario.append("nombre", nombre);
+        
+        fetch("buscar_producto.php", {method: "POST", body: formulario})
+            .then(r => r.json())
+            .then(d => {
+                if(d.error) {
+                    alert(d.error);
+                    document.getElementById("datos").innerHTML = "";
+                } else {
+                    mostrar([d]);
+                }
+            });
+    }
+
+    function insertar() {
+        let formulario = new FormData();
+        formulario.append("nombre", document.getElementById("nombre").value);
+        formulario.append("cantidad", document.getElementById("cantidad").value);
+        formulario.append("precio", document.getElementById("precio").value);
+        fetch("insert.php", {method: "POST", body: formulario}).then(respuesta => respuesta.text()).then(datos => {
+            alert(datos);
+            cargar();
+        });
+    }
+
+    function actualizar() {
+        let formulario = new FormData();
+        formulario.append("id", document.getElementById("id").value);
+        formulario.append("nombre", document.getElementById("nombre").value);
+        formulario.append("cantidad", document.getElementById("cantidad").value);
+        formulario.append("precio", document.getElementById("precio").value);
+        fetch("update.php", {method: "POST", body: formulario}).then(respuesta => respuesta.text()).then(datos => {
+            alert(datos);
+            cargar();
+        });
+    }
+
+    function editar(id, nombre, cantidad, precio) {
+        document.getElementById("id").value = id;
+        document.getElementById("nombre").value = nombre;
+        document.getElementById("cantidad").value = cantidad;
+        document.getElementById("precio").value = precio;
+    }
+
+    function eliminar(id) {
+        if(confirm("¿Eliminar?")) {
+            let formulario = new FormData();
+            formulario.append("id", id);
+            fetch("delete.php", {method: "POST", body: formulario}).then(respuesta => respuesta.text()).then(datos => {
+                alert(datos);
+                cargar();
+            });
+        }
+    }
+</script>
+
+</body>
+</html>

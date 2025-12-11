@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Tareas</title>
+</head>
+<body>
+
+<h1>Mi Lista de Tareas</h1>
+
+<h2>Nueva Tarea</h2>
+<input type="hidden" id="idTarea">
+<input type="text" id="titulo" placeholder="Título">
+<textarea id="descripcion" placeholder="Descripción" rows="3"></textarea>
+<input type="date" id="fecha_limite">
+<button onclick="crearTarea()">Crear Tarea</button>
+<button onclick="limpiarTarea()">Limpiar</button>
+
+<h2>Mis Tareas</h2>
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+        <th>Fecha Límite</th>
+        <th>Acciones</th>
+    </tr>
+    <tbody id="tareas"></tbody>
+</table>
+
+<script>
+    listarTareas();
+
+    function listarTareas() {
+        fetch("listarTareas.php")
+            .then(r => r.json())
+            .then(d => {
+                let html = "";
+                d.forEach(tarea => {
+                    let color = tarea.estado === 'completada' ? '#ccc' : '#fff';
+                    let botones = tarea.estado === 'pendiente' ? '<button onclick="completarTarea(' + tarea.id + ')">Completar</button>' : '';
+                    html += '<tr style="background-color: ' + color + '">';
+                    html += '<td>' + tarea.id + '</td>';
+                    html += '<td>' + tarea.titulo + '</td>';
+                    html += '<td>' + (tarea.descripcion || '') + '</td>';
+                    html += '<td>' + tarea.estado + '</td>';
+                    html += '<td>' + (tarea.fecha_limite || '') + '</td>';
+                    html += '<td>' + botones + '<button onclick="editarTarea(' + tarea.id + ', \'' + (tarea.descripcion || '') + '\', \'' + (tarea.fecha_limite || '') + '\')">Editar</button><button onclick="eliminarTarea(' + tarea.id + ')">Eliminar</button></td>';
+                    html += '</tr>';
+                });
+                document.getElementById("tareas").innerHTML = html;
+            });
+    }
+
+    function crearTarea() {
+        let titulo = document.getElementById("titulo").value;
+        let descripcion = document.getElementById("descripcion").value;
+        let fecha_limite = document.getElementById("fecha_limite").value;
+        let id = document.getElementById("idTarea").value;
+
+        if(!titulo) return alert("Ingrese título");
+
+        let formulario = new FormData();
+        formulario.append("titulo", titulo);
+        formulario.append("descripcion", descripcion);
+        formulario.append("fecha_limite", fecha_limite);
+        if(id) formulario.append("id", id);
+
+        let archivo = id ? "editarTarea.php" : "crearTarea.php";
+
+        fetch(archivo, {method: "POST", body: formulario})
+            .then(r => r.text())
+            .then(d => {
+                alert(d);
+                limpiarTarea();
+                listarTareas();
+            });
+    }
+
+    function completarTarea(id) {
+        if(confirm("¿Marcar como completada?")) {
+            let formulario = new FormData();
+            formulario.append("id", id);
+
+            fetch("completarTarea.php", {method: "POST", body: formulario})
+                .then(r => r.text())
+                .then(d => {
+                    alert(d);
+                    listarTareas();
+                });
+        }
+    }
+
+    function editarTarea(id, descripcion, fecha_limite) {
+        document.getElementById("idTarea").value = id;
+        document.getElementById("descripcion").value = descripcion;
+        document.getElementById("fecha_limite").value = fecha_limite;
+        document.getElementById("titulo").focus();
+    }
+
+    function limpiarTarea() {
+        document.getElementById("idTarea").value = "";
+        document.getElementById("titulo").value = "";
+        document.getElementById("descripcion").value = "";
+        document.getElementById("fecha_limite").value = "";
+    }
+
+    function eliminarTarea(id) {
+        if(confirm("¿Eliminar tarea?")) {
+            let formulario = new FormData();
+            formulario.append("id", id);
+
+            fetch("eliminarTarea.php", {method: "POST", body: formulario})
+                .then(r => r.text())
+                .then(d => {
+                    alert(d);
+                    listarTareas();
+                });
+        }
+    }
+</script>
+
+</body>
+</html>
